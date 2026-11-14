@@ -1,0 +1,12 @@
+{
+  "name": "pileup",
+  "version": "1.0.0",
+  "description": "See where your deadlines pile up before they do.",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "test": "node --test",
+    "start": "python -m http.server 8137"
+  }
+}
