@@ -4,6 +4,7 @@ import { parseOutline, linesFromPdfItems } from './parse.js';
 import { buildWeeks, summarize, weekStart, addDays } from './plan.js';
 import { toICS } from './ics.js';
 import { SAMPLES } from './samples.js';
+import { readQuick } from './quick.js';
 
 const STORE = 'pileup.v1';
 const COLORS = ['#2257b8', '#1f7a4d', '#6d3fb0', '#a66a00', '#0c7c86', '#b02a78'];
@@ -28,19 +29,21 @@ let removed = null; // last removed course, kept for Undo
 
 const say = (html) => { $('#status').innerHTML = html; };
 
+const nextColor = () => {
+  const used = state.courses.map((c) => c.color);
+  return COLORS.find((c) => !used.includes(c)) || COLORS[state.courses.length % COLORS.length];
+};
+
+function makeCourse(name, text, items) {
+  const course = { id: uid(), name, color: nextColor(), text, items: items.map((it) => ({ id: uid(), ...it })) };
+  state.courses.push(course);
+  return course;
+}
+
 function addCourse(name, text) {
   const { items } = parseOutline(text);
   if (!items.length) return null;
-  const used = state.courses.map((c) => c.color);
-  const course = {
-    id: uid(),
-    name: name || text.trim().split('\n')[0].trim().slice(0, 40) || 'Course',
-    color: COLORS.find((c) => !used.includes(c)) || COLORS[state.courses.length % COLORS.length],
-    text,
-    items: items.map((it) => ({ id: uid(), ...it })),
-  };
-  state.courses.push(course);
-  return course;
+  return makeCourse(name || text.trim().split('\n')[0].trim().slice(0, 40) || 'Course', text, items);
 }
 
 // ---- course cards ----
@@ -91,7 +94,10 @@ function itemHTML(it) {
   const until = it.end ? ` <span class="until">to ${shortDate(it.end)}</span>` : '';
   const at = it.time ? ` <span class="until">${clock(it.time)}</span>` : '';
   const worth = it.type === 'info' ? '' : it.weight == null ? '<span class="pct none" title="No weight found">no %</span>' : `<span class="pct"${it.est ? ' title="Estimated by splitting the grade breakdown evenly"' : ''}>${it.est ? '~' : ''}${num(it.weight)}%</span>`;
-  return `<li class="${it.type}" style="--c:${it.course.color}">
+  const tick = it.type === 'info' ? '<span></span>'
+    : `<input type="checkbox" class="tick" data-done="${it.id}"${it.done ? ' checked' : ''} aria-label="Done: ${esc(it.title)}">`;
+  return `<li class="${it.type}${it.done ? ' done' : ''}" style="--c:${it.course.color}">
+    ${tick}
     <span class="dow">${day}</span>
     <span class="tag">${esc(shortName(it.course.name))}</span>
     <span class="what">${esc(it.title)}${until}${at}</span>
@@ -104,7 +110,8 @@ function weekHTML(w, max, now) {
   const cls = ['week', w.pileup && 'pileup', w.start === now && 'now', addDays(w.start, 6) < todayISO() && 'past'].filter(Boolean).join(' ');
   const worth = w.known ? `, worth ${num(w.known)}%` : '';
   const extra = w.unweighted && w.known ? ` plus ${w.unweighted} with no %` : '';
-  const tally = w.due ? `${w.due} due${worth}${extra}` : 'Nothing graded';
+  const ticked = w.done ? `, ${w.done} done` : '';
+  const tally = w.due ? `${w.due} due${worth}${extra}${ticked}` : w.done ? 'All done' : 'Nothing graded';
   const verb = w.tip && ['exam', 'quiz'].includes(w.tip.item.type) ? 'Start studying for' : 'Get ahead on';
   // name the course too, since three courses can each have a "Final exam"
   const what = w.tip && esc(`${w.tip.item.title} (${shortName(w.tip.item.course.name)})`);
@@ -218,6 +225,40 @@ async function takeFile(file) {
   }
 }
 
+// ---- quick add ----
+
+function quickPreview() {
+  const r = readQuick($('#qtext').value, state.courses, todayISO());
+  const p = $('#qprev');
+  p.className = r ? (r.error ? 'bad' : 'ok') : '';
+  if (!r) p.textContent = '';
+  else if (r.error) p.textContent = r.error;
+  else {
+    const name = r.course ? shortName(r.course.name) : r.newCourse;
+    const what = r.items.map((it) => esc(it.title)
+      + `, ${fmt(it.date, { weekday: 'short', month: 'short', day: 'numeric' })}`
+      + (it.end ? ` to ${shortDate(it.end)}` : '')
+      + (it.time ? ` at ${clock(it.time)}` : '')
+      + (it.weight != null ? `, ${num(it.weight)}%` : '')).join('; ');
+    p.innerHTML = `<span class="tag" style="--c:${r.course?.color || nextColor()}">${esc(name)}</span> ${what}${r.newCourse ? ' <i>(new class)</i>' : ''}`;
+  }
+  return r;
+}
+
+$('#qtext').addEventListener('input', quickPreview);
+$('#quick').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const r = quickPreview();
+  if (!r || r.error) return $('#qtext').focus();
+  const course = r.course || makeCourse(r.newCourse, '', []);
+  course.items.push(...r.items.map((it) => ({ id: uid(), ...it })));
+  $('#qtext').value = '';
+  update();
+  $('#qprev').className = '';
+  $('#qprev').textContent = `Added ${r.items[0].title} to ${course.name}.`;
+  $('#qtext').focus();
+});
+
 // ---- events ----
 
 $('#add').addEventListener('submit', (e) => {
@@ -313,6 +354,16 @@ $('#clear').addEventListener('click', (e) => {
     e.target.textContent = 'Press again to clear every course';
     setTimeout(() => { delete e.target.dataset.sure; e.target.textContent = 'Clear everything'; }, 4000);
   }
+});
+
+// ticking something off on the map
+$('#weeks').addEventListener('change', (e) => {
+  const id = e.target.dataset.done;
+  const it = id && state.courses.flatMap((c) => c.items).find((x) => x.id === id);
+  if (!it) return;
+  it.done = e.target.checked;
+  update(false);
+  $(`[data-done="${id}"]`)?.focus();
 });
 
 $('#past').addEventListener('click', () => { state.showPast = !state.showPast; update(false); });

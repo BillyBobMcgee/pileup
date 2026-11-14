@@ -39,7 +39,7 @@ export function buildWeeks(items, today = null) {
   const weeks = [];
   const last = weekStart(live[live.length - 1].date);
   for (let s = weekStart(live[0].date); s <= last && weeks.length < MAX_WEEKS; s = addDays(s, 7)) {
-    weeks.push({ start: s, items: [], due: 0, load: 0, known: 0, unweighted: 0, pileup: false, tip: null });
+    weeks.push({ start: s, items: [], due: 0, done: 0, load: 0, known: 0, unweighted: 0, pileup: false, tip: null });
   }
   const at = new Map(weeks.map((w, i) => [w.start, i]));
   for (const it of live) {
@@ -47,6 +47,8 @@ export function buildWeeks(items, today = null) {
     if (!w) continue;
     w.items.push(it);
     if (it.type === 'info') continue;
+    // finished work still shows on the map but stops counting
+    if (it.done) { w.done++; continue; }
     w.due++;
     w.load += loadOf(it);
     if (it.weight == null) w.unweighted++;
@@ -63,7 +65,7 @@ export function buildWeeks(items, today = null) {
 
 // Finds the nearest light week in the three before a pileup, and the biggest thing to get ahead on.
 function tipFor(weeks, i, today) {
-  const item = weeks[i].items.filter((it) => it.type !== 'info').sort((a, b) => loadOf(b) - loadOf(a))[0];
+  const item = weeks[i].items.filter((it) => it.type !== 'info' && !it.done).sort((a, b) => loadOf(b) - loadOf(a))[0];
   for (let j = i - 1; j >= Math.max(0, i - 3); j--) {
     const over = today && addDays(weeks[j].start, 6) < today;
     if (weeks[j].load <= LIGHT_LOAD && !over) return { week: weeks[j].start, item };

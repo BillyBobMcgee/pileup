@@ -16,15 +16,25 @@
     <header class="masthead">
       <svg class="mark" viewBox="0 0 40 34" aria-hidden="true"><rect x="3" y="24" width="34" height="9"/><rect x="7" y="13" width="28" height="9"/><rect class="top" x="1" y="2" width="29" height="9"/></svg>
       <h1>Pileup</h1>
-      <p>See where your deadlines pile up before they do.</p>
+      <p>See which weeks have too much due.</p>
     </header>
 
+    <form id="quick" novalidate>
+      <h2>Add something due</h2>
+      <label for="qtext">Class, what it is, when</label>
+      <div class="qrow">
+        <input id="qtext" type="text" autocomplete="off" spellcheck="false" placeholder="chem lab report fri 10%">
+        <button type="submit" class="key">Add</button>
+      </div>
+      <p id="qprev" aria-live="polite"></p>
+    </form>
+
     <form id="add" novalidate>
-      <h2>Add a course</h2>
+      <h2>Add a course outline</h2>
       <label for="cname">Course name</label>
       <input id="cname" type="text" autocomplete="off" placeholder="Chemistry">
       <label for="ctext">Course outline</label>
-      <textarea id="ctext" rows="7" placeholder="Paste the outline here, or drop a PDF on this box."></textarea>
+      <textarea id="ctext" rows="7" placeholder="Paste a course outline or your Google Classroom Classwork page. You can also drop a PDF here."></textarea>
       <div class="actions">
         <button type="submit" class="key">Find the dates</button>
         <button type="button" class="link" id="pick">Open a PDF or text file</button>
@@ -43,11 +53,11 @@
 
   <main class="map" aria-label="Term map">
     <div class="intro">
-      <h2>One map for every deadline in every course.</h2>
+      <h2>All your deadlines on one page.</h2>
       <ol>
-        <li><b>Paste</b> each course outline on the left. Pileup reads the dates and what each thing is worth.</li>
-        <li><b>See</b> the weeks where too much lands at once, and the quiet week before to get ahead in.</li>
-        <li><b>Save</b> it all to your calendar with reminders.</li>
+        <li><b>Paste</b> your course outlines or your Google Classroom page. It finds the dates and what each thing is worth.</li>
+        <li><b>See</b> which weeks have too much due, and which easy week to get ahead in.</li>
+        <li><b>Add</b> new stuff as it comes up, like "chem quiz fri", and tick it off when it's done.</li>
       </ol>
       <button type="button" class="key" id="samples">Try it with 3 sample courses</button>
     </div>
@@ -63,7 +73,7 @@
       </div>
       <button type="button" class="link" id="past" hidden></button>
       <ol id="weeks"></ol>
-      <p class="rule">A week is marked as a pileup when 3 or more things are due and add up to 20% or more of your grades, or when what is due adds up to 30% or more.</p>
+      <p class="rule">A week is marked as a pileup when 3 or more things are due and add up to 20% or more of your grades, or when what is due adds up to 30% or more. Things you've ticked off don't count.</p>
     </div>
   </main>
 

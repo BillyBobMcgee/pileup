@@ -30,7 +30,7 @@ export function toICS(courses, opts = {}) {
 
   for (const course of courses) {
     for (const it of course.items) {
-      if (!it.on || !it.date) continue;
+      if (!it.on || !it.date || it.done) continue;
       const lines = ['BEGIN:VEVENT', `UID:${it.id}@pileup`, `DTSTAMP:${now}`];
       if (it.time) {
         lines.push(`DTSTART:${stamp(it.date, it.time)}`);
