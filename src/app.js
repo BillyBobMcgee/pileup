@@ -105,7 +105,12 @@ function weekHTML(w, max, now) {
   const worth = w.known ? `, worth ${num(w.known)}%` : '';
   const extra = w.unweighted && w.known ? ` plus ${w.unweighted} with no %` : '';
   const tally = w.due ? `${w.due} due${worth}${extra}` : 'Nothing graded';
-  const tip = w.tip ? `<p class="tip">The week of <b>${shortDate(w.tip.week)}</b> is light. ${['exam', 'quiz'].includes(w.tip.item.type) ? 'Start studying for' : 'Get ahead on'} <b>${esc(w.tip.item.title)}</b> then.</p>` : '';
+  const verb = w.tip && ['exam', 'quiz'].includes(w.tip.item.type) ? 'Start studying for' : 'Get ahead on';
+  // name the course too, since three courses can each have a "Final exam"
+  const what = w.tip && esc(`${w.tip.item.title} (${shortName(w.tip.item.course.name)})`);
+  const tip = !w.tip ? ''
+    : w.tip.week === now ? `<p class="tip"><b>This week</b> is light. ${verb} <b>${what}</b> now.</p>`
+    : `<p class="tip">The week of <b>${shortDate(w.tip.week)}</b> is light. ${verb} <b>${what}</b> then.</p>`;
   return `<li class="${cls}">
     <div class="when"><span class="mon">${mon}</span><span class="day">${day}</span>${w.start === now ? '<span class="here">This week</span>' : ''}</div>
     <div class="body">
@@ -135,7 +140,8 @@ function headlineHTML(weeks, today) {
   const of = (w) => `${plural(w.due, 'thing')} due${w.known ? `, worth ${num(w.known)}%` : ''}`;
   if (next) {
     const rest = count > 1 ? `${count} pileup weeks on this map. The heaviest is the week of ${shortDate(worst.start)}.` : 'It is the only pileup on this map.';
-    return `<h2>Next pileup: the week of <em>${shortDate(next.start)}</em>.</h2><p><b>${of(next)}.</b> ${rest}</p>`;
+    const title = next.start === weekStart(today) ? '<em>This week</em> is a pileup.' : `Next pileup: the week of <em>${shortDate(next.start)}</em>.`;
+    return `<h2>${title}</h2><p><b>${of(next)}.</b> ${rest}</p>`;
   }
   if (count) return `<h2>The pileups are behind you.</h2><p>Nothing ahead crosses the line. The heaviest week was ${shortDate(worst.start)}.</p>`;
   return `<h2>No pileups.</h2><p>Your heaviest week is the week of ${shortDate(worst.start)}: ${of(worst)}.</p>`;
