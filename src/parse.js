@@ -32,7 +32,7 @@ const INFO = /\b(no (?:class|school|lab|lecture)(?:es|s)?|holiday|reading week|(
 const NOT_SCHEME = /\b(late|penalt|per day|deduct|minimum|at least|to pass|attendance|drop(?:ped)?|lowest|bonus|or (?:higher|above))/i;
 
 // Page furniture that happens to carry a date.
-const NOISE = /\b(last (?:updated|modified|revised)|posted|copyright|office hours)\b|©/i;
+const NOISE = /\b(last (?:updated|modified|revised)|posted|copyright|office hours)\b|^edited\b|©/i;
 
 // What kind of work a title names. Order matters: "final essay" is an essay, not a final.
 const KEYS = [
