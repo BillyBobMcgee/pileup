@@ -1,7 +1,7 @@
 // Quick add: "chem lab report fri 10%" becomes one item in the course that matches "chem".
 
-import { parseOutline, findDates, keyOf } from './parse.js?v=2';
-import { addDays, weekStart } from './plan.js?v=2';
+import { parseOutline, findDates, keyOf } from './parse.js?v=3';
+import { addDays, weekStart } from './plan.js?v=3';
 
 const DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 const RE_DAY = /\b(?:(next|this)\s+)?(mon(?:day)?|tue(?:s(?:day)?)?|wed(?:nesday)?|thu(?:r(?:s(?:day)?)?)?|fri(?:day)?|sat(?:urday)?|sun(?:day)?)\b\.?/i;

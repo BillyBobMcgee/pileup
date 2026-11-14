@@ -1,10 +1,10 @@
 // The page: keeps the list of courses, draws the course cards and the term map.
 
-import { parseOutline, linesFromPdfItems } from './parse.js?v=2';
-import { buildWeeks, summarize, weekStart, addDays } from './plan.js?v=2';
-import { toICS } from './ics.js?v=2';
-import { SAMPLES } from './samples.js?v=2';
-import { readQuick } from './quick.js?v=2';
+import { parseOutline, linesFromPdfItems } from './parse.js?v=3';
+import { buildWeeks, summarize, weekStart, addDays } from './plan.js?v=3';
+import { toICS } from './ics.js?v=3';
+import { SAMPLES } from './samples.js?v=3';
+import { readQuick, matchCourse } from './quick.js?v=3';
 
 const STORE = 'pileup.v1';
 const COLORS = ['#2257b8', '#1f7a4d', '#6d3fb0', '#a66a00', '#0c7c86', '#b02a78'];
@@ -38,6 +38,24 @@ function makeCourse(name, text, items) {
   const course = { id: uid(), name, color: nextColor(), text, items: items.map((it) => ({ id: uid(), ...it })) };
   state.courses.push(course);
   return course;
+}
+
+// "chem" or "Chem" finds the Chem class you already have. Longer names have to match exactly,
+// so "Chemistry 12" doesn't land in "Chemistry 11".
+function findByName(name) {
+  const n = name.trim().toLowerCase();
+  if (!n) return null;
+  return state.courses.find((c) => c.name.trim().toLowerCase() === n) || (/\s/.test(n) ? null : matchCourse(n, state.courses));
+}
+
+// Adds the dates from an outline to a class you already have, skipping ones it already has.
+function addToCourse(course, text) {
+  const { items } = parseOutline(text);
+  const have = new Set(course.items.map((it) => `${it.date}|${it.title.toLowerCase()}`));
+  const fresh = items.filter((it) => !have.has(`${it.date}|${it.title.toLowerCase()}`));
+  course.items.push(...fresh.map((it) => ({ id: uid(), ...it })));
+  course.text = course.text ? `${course.text}\n\n${text}` : text;
+  return { found: items.length, added: fresh.length };
 }
 
 function addCourse(name, text) {
@@ -269,6 +287,14 @@ $('#add').addEventListener('submit', (e) => {
   e.preventDefault();
   const text = $('#ctext').value;
   if (!text.trim()) return say('Paste a course outline first.');
+  const existing = findByName($('#cname').value);
+  if (existing) {
+    const { found, added } = addToCourse(existing, text);
+    if (!found) return say('No dates found in that text. Pileup looks for dates like "Oct 3", "3 October" or "10/03".');
+    say(added ? `Added ${plural(added, 'date')} to ${esc(existing.name)}.${found > added ? ` ${found - added} were already there.` : ''}` : `Those dates are already in ${esc(existing.name)}.`);
+    e.target.reset();
+    return update();
+  }
   const course = addCourse($('#cname').value.trim(), text);
   if (!course) return say('No dates found in that text. Pileup looks for dates like "Oct 3", "3 October" or "10/03".');
   const skipped = course.items.filter((it) => !it.on).length;
