@@ -1,10 +1,10 @@
 // The page: keeps the list of courses, draws the course cards and the term map.
 
-import { parseOutline, linesFromPdfItems } from './parse.js';
-import { buildWeeks, summarize, weekStart, addDays } from './plan.js';
-import { toICS } from './ics.js';
-import { SAMPLES } from './samples.js';
-import { readQuick } from './quick.js';
+import { parseOutline, linesFromPdfItems } from './parse.js?v=2';
+import { buildWeeks, summarize, weekStart, addDays } from './plan.js?v=2';
+import { toICS } from './ics.js?v=2';
+import { SAMPLES } from './samples.js?v=2';
+import { readQuick } from './quick.js?v=2';
 
 const STORE = 'pileup.v1';
 const COLORS = ['#2257b8', '#1f7a4d', '#6d3fb0', '#a66a00', '#0c7c86', '#b02a78'];
@@ -249,7 +249,11 @@ $('#qtext').addEventListener('input', quickPreview);
 $('#quick').addEventListener('submit', (e) => {
   e.preventDefault();
   const r = quickPreview();
-  if (!r || r.error) return $('#qtext').focus();
+  if (!r) $('#qprev').textContent = 'Type something first, like "chem quiz fri".';
+  if (!r || r.error) {
+    $('#qprev').className = 'bad';
+    return $('#qtext').focus();
+  }
   const course = r.course || makeCourse(r.newCourse, '', []);
   course.items.push(...r.items.map((it) => ({ id: uid(), ...it })));
   $('#qtext').value = '';

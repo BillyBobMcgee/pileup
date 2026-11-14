@@ -1,6 +1,6 @@
 // Writes a calendar file (iCalendar, RFC 5545) that Google, Apple and Outlook calendars can import.
 
-import { addDays, leadDays } from './plan.js';
+import { addDays, leadDays } from './plan.js?v=2';
 
 const esc = (s) => String(s).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
 const compact = (iso) => iso.replace(/-/g, '');
